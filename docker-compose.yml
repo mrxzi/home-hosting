@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Web Dashboard
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./dashboard/data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mongodb
+
+  # Database
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./server/config/mongodb:/etc/mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=hosting123
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./server/config/nginx:/etc/nginx/conf.d
+      - ./server/ssl:/etc/ssl/certs
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+
+  # Bot Manager
+  bot-manager:
+    build: ./server/bot-manager
+    volumes:
+      - ./bots:/app/bots
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - MONGODB_URI=mongodb://admin:hosting123@mongodb:27017
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    restart: unless-stopped
+
+  # File Manager
+  file-manager:
+    image: filebrowser/filebrowser:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data:/srv
+      - ./server/config/filebrowser:/config
+    environment:
+      - FB_DATABASE=/config/database.db
+    restart: unless-stopped
+
+  # Monitoring
+  monitoring:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./server/config/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  redis_data:
+  prometheus_data:

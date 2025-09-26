@@ -1,0 +1,29 @@
+{
+  "name": "bot-manager",
+  "version": "1.0.0",
+  "description": "Bot management service for home hosting system",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "dockerode": "^4.0.0",
+    "mongoose": "^7.5.0",
+    "redis": "^4.6.7",
+    "node-cron": "^3.0.2",
+    "winston": "^3.10.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "bot-manager",
+    "docker",
+    "home-hosting"
+  ],
+  "author": "Home Hosting System",
+  "license": "MIT"
+}
